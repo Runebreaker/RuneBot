@@ -74,6 +74,7 @@ async def on_message(message):
                                    '\n- !mock - Mocks the last message'
                                    '\n- !bonk - bonk'
                                    '\n- !intelligent - no signs'
+                                   '\n- !imposter - ejects all imposters'
                                    '\n'
                                    '\nAutomatic functions:'
                                    '\n- Repeats \'f\', \'F\' and \':regional_indicator_f:\'')
@@ -112,10 +113,17 @@ async def on_message(message):
             await adminChannel.send('User with ID: ' + str(userID) + ' has been banned for ' + str(args[2]) + ' ' + durDict(args[3]))
 
     ## normal commands
+    if '!imposter' == message.content:
+        for member in guild.members:
+            for role in member.roles:
+                if str(role) == 'Imposter':
+                    await message.channel.send(member.name + ' was An Imposter!')
     if '!intelligent' == message.content:
-        await message.channel.send('https://tenor.com/view/buzz-lightyear-no-sign-of-intelligent-life-dumb-toy-story-gif-11489315')
+        await message.channel.send('https://tenor.com/view/buzz-lightyear-no-sign-of-intelligent-life-dumb-toy-story'
+                                   '-gif-11489315')
     if '!bonk' == message.content:
-        await message.channel.send('https://media1.tenor.com/images/ae34b2d6cbac150bfddf05133a0d8337/tenor.gif?itemid=14889944')
+        await message.channel.send('https://media1.tenor.com/images/ae34b2d6cbac150bfddf05133a0d8337/tenor.gif?itemid'
+                                   '=14889944')
     if '!egal' == message.content:
         await message.channel.send('https://giphy.com/gifs/vol2cat-oliver-egal-wendler-ZG5KTqutRAfZ6i5OVR')
     if '!mock' == message.content:
@@ -147,7 +155,8 @@ async def on_message(message):
             await message.channel.send('Usage: !pavilion <help|erect|burn>')
             return
         if args[1] == 'help':
-            await message.channel.send('Usage: !pavilion <help|erect|burn> | Every user is allowed one pavilion for voice and text respectively.')
+            await message.channel.send('Usage: !pavilion <help|erect|burn> | Every user is allowed one pavilion for '
+                                       'voice and text respectively.') 
         if args[1] == 'erect':
             await message.channel.send('Not implemented yet')
         if args[1] == 'burn':
