@@ -54,7 +54,7 @@ async def on_message(message):
         messages = await message.channel.history(limit=2).flatten()
         await messages[0].delete()
 
-        whitelist = set('abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+        whitelist = set('abcdefghijklmnopqrstuvwxyzöüä ABCDEFGHIJKLMNOPQRSTUVWXYZÖÜÄß0123456789')
         content = ''.join(filter(whitelist.__contains__, messages[1].content.lower()))
 
         newContent = ""
