@@ -113,11 +113,11 @@ async def on_message(message):
             await adminChannel.send('User with ID: ' + str(userID) + ' has been banned for ' + str(args[2]) + ' ' + durDict(args[3]))
 
     ## normal commands
-    if '!imposter' == message.content:
+    if '!impostor' == message.content:
         for member in guild.members:
             for role in member.roles:
-                if str(role) == 'Imposter':
-                    await message.channel.send(member.name + ' was An Imposter!')
+                if str(role) == 'Impostor':
+                    await message.channel.send(member.name + ' was An Impostor!')
     if '!intelligent' == message.content:
         await message.channel.send('https://tenor.com/view/buzz-lightyear-no-sign-of-intelligent-life-dumb-toy-story'
                                    '-gif-11489315')
@@ -152,7 +152,7 @@ async def on_message(message):
             return
         args = message.content.split()
         if len(args) == 1:
-            await message.channel.send('Usage: !pavilion <help|erect|burn>')
+            await message.channel.send('Usage: !pavilion <help|erect|burn> [erect: custom name] [erect/burn: text/voice]')
             return
         if args[1] == 'help':
             await message.channel.send('Usage: !pavilion <help|erect|burn> | Every user is allowed one pavilion for '
