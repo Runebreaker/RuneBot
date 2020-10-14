@@ -92,13 +92,13 @@ async def on_message(message):
     if runeBotShort + '!adminhelp' == message.content:
         if not [x for x in message.author.roles if x.name == 'Admin']:
             return
-        await adminChannel.send('Specific admin commands:'
-                                '\n- admin!users: Displays all users on server'
-                                '\n- admin!channel <set>: Shows a message in current admin channel. Sets current '
+        await adminChannel.send('Specific admin commands [start with ' + runeBotShort + '!admin]:'
+                                '\n- users: Displays all users on server'
+                                '\n- channel <set>: Shows a message in current admin channel. Sets current '
                                 'channel as new admin channel with \'set\' argument'
-                                '\n- admin!tempban <userID> <duration> <unit>: WIP')
+                                '\n- tempban <userID> <duration> <unit>: WIP')
     if runeBotShort + '!help' == message.content:
-        await message.channel.send('List of commands:'
+        await message.channel.send('List of commands [start with ' + runeBotShort + '!]:'
                                    '\n- help: Displays help'
                                    '\n'
                                    '\nMemes:'
@@ -109,7 +109,9 @@ async def on_message(message):
                                    '\n- impostor - ejects all impostors'
                                    '\n'
                                    '\nAutomatic functions:'
-                                   '\n- Repeats \'f\', \'F\' and \':regional_indicator_f:\'')
+                                   '\n- Repeats \'f\', \'F\' and \':regional_indicator_f:\''
+                                   '\n- Knows the complete script of Highschool DxD Season 1'
+                                   '\n- DIE TECHNIK, THADDÄUS!')
 
     ## admin commands
     if runeBotShort + '!adminusers' == message.content:
