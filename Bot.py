@@ -130,7 +130,7 @@ async def on_message(message):
                 temp += '\n- ' + str(member.id) + '\t' + member.name + '\t' + member.nick
             else:
                 temp += '\n- ' + str(member.id) + '\t' + member.name + '\t' + member.name
-        await adminChannel.send('\n- ' + temp)
+        await adminChannel.send(temp)
 
     if message.content.lower().startswith(runeBotShort + '!adminchannel'):
         if not [x for x in message.author.roles if x.name == 'Admin']:
