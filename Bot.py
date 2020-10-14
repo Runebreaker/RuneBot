@@ -17,12 +17,12 @@ adminChannelID = 755841743861317632 #default for chillout lounge
 runeBotShort = 'rb'
 numberLines = 0
 text_file = open("HighSchoolDxD.txt", encoding="utf8")
-filtered_file = open("HighSchoolDxDFiltered.txt", encoding="utf8")
-filtered_file.write(text_file.read())
+#filtered_file = open("HighSchoolDxDFiltered.txt", encoding="utf8")
+#filtered_file.write(text_file.read())
 lines = text_file.read().split('\n')
-for i in range(len(lines) - 1):
-    if "Hiryuu Fansubs" in lines[i]:
-        while ""
+#for i in range(len(lines) - 1):
+#    if "Hiryuu Fansubs" in lines[i]:
+#        while ""
 text_file.close()
 
 def similar(a, b):
