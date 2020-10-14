@@ -80,6 +80,10 @@ async def on_message(message):
     if len(secondList) > 0:
         await message.channel.send(secondList[random.randint(0, len(secondList) - 1)])
 
+    # DIE TECHNIK THADDÄUS
+    if 'technik' in message.content.lower():
+        await message.channel.send('DIE TECHNIK, THADDÄUS!')
+
     # Commands
     ## help
     if '!help' == message.content:
