@@ -120,17 +120,17 @@ async def on_message(message):
         await adminChannel.send(message.author.mention)
         members = '[ID]/[Account Name]/[Nickname]'
         await adminChannel.send('Guild Members:\n' + members)
-        memberlist = []
-        temp = ''
+        retain = ''
         for member in guild.members:
             if isinstance(member.nick, str):
-                temp += '\n- ' + str(member.id) + '\t' + member.name + '\t' + member.nick
+                temp = '\n- ' + str(member.id) + '\t' + member.name + '\t' + member.nick
             else:
-                temp += '\n- ' + str(member.id) + '\t' + member.name + '\t' + member.name
-            if len(memberlist) + len(temp) > 2000:
-                await adminChannel.send(temp)
-                temp = ''
-        await adminChannel.send(temp)
+                temp = '\n- ' + str(member.id) + '\t' + member.name + '\t' + member.name
+            if len(temp) + len(retain) > 2000:
+                await adminChannel.send(retain)
+                retain = ''
+            retain += temp
+        await adminChannel.send(retain)
 
     if message.content.lower().startswith(runeBotShort + '!adminchannel'):
         if not [x for x in message.author.roles if x.name == 'Admin']:
