@@ -124,12 +124,12 @@ async def on_message(message):
         temp = ''
         for member in guild.members:
             if len(memberlist) + len(temp) > 2000:
-                await adminChannel.send('\n- ' + temp)
+                await adminChannel.send(temp)
                 temp = ''
             if isinstance(member.nick, str):
-                temp += str(member.id) + '\t' + member.name + '\t' + member.nick
+                temp += '\n- ' + str(member.id) + '\t' + member.name + '\t' + member.nick
             else:
-                temp += str(member.id) + '\t' + member.name + '\t' + member.name
+                temp += '\n- ' + str(member.id) + '\t' + member.name + '\t' + member.name
         await adminChannel.send('\n- ' + temp)
 
     if message.content.lower().startswith(runeBotShort + '!adminchannel'):
