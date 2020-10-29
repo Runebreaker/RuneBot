@@ -6,27 +6,57 @@ from difflib import SequenceMatcher
 import discord
 from dotenv import load_dotenv
 
+from github import Github, Repository
+
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
 
 pavilions = []
 client = discord.Client()
-adminChannelID = 755841743861317632 #default for chillout lounge
+adminChannelID = 755841743861317632  # default for chillout lounge
 
 runeBotShort = 'rb'
 numberLines = 0
 text_file = open("HighSchoolDxD.txt", encoding="utf8")
-#filtered_file = open("HighSchoolDxDFiltered.txt", encoding="utf8")
-#filtered_file.write(text_file.read())
+# filtered_file = open("HighSchoolDxDFiltered.txt", encoding="utf8")
+# filtered_file.write(text_file.read())
 lines = text_file.read().split('\n')
-#for i in range(len(lines) - 1):
+# for i in range(len(lines) - 1):
 #    if "Hiryuu Fansubs" in lines[i]:
 #        while ""
 text_file.close()
 
+
+def setRepo(text):
+    open("RepoInfo.txt", "w").close()
+    if len(text) == 0:
+        return
+    if text.startswith('https://'):
+        split = text.split('/')
+        text = split[len(split) - 2] + '/' + split[len(split) - 1]
+    file = open("RepoInfo.txt", "w")
+    file.write("REPOINFO=" + text)
+    file.close()
+
+
+def getRepo():
+    file = open("RepoInfo.txt", "r")
+    string = file.read()[9:]
+    file.close()
+    return string
+
+
+runeBotLoginMail = 'realrunebot@gmail.de'
+runeBotLoginName = 'RealRuneBot'
+runeBotLoginPass = 'runebot4eva!'
+
+git = Github(runeBotLoginName, runeBotLoginPass)
+
+
 def similar(a, b):
     return SequenceMatcher(None, a, b).ratio()
+
 
 def seconds():
     return 'second(s)'
@@ -70,6 +100,8 @@ async def on_message(message):
     if message.author == client.user:
         return
 
+    # repo crawler
+
     # DxD
     global lines
     secondList = []
@@ -93,25 +125,25 @@ async def on_message(message):
         if not [x for x in message.author.roles if x.name == 'Admin']:
             return
         await adminChannel.send('Specific admin commands [start with ' + runeBotShort + '!admin]:'
-                                '\n- users: Displays all users on server'
-                                '\n- channel <set>: Shows a message in current admin channel. Sets current '
-                                'channel as new admin channel with \'set\' argument'
-                                '\n- tempban <userID> <duration> <unit>: WIP')
+                                                                                        '\n- users: Displays all users on server'
+                                                                                        '\n- channel <set>: Shows a message in current admin channel. Sets current '
+                                                                                        'channel as new admin channel with \'set\' argument'
+                                                                                        '\n- tempban <userID> <duration> <unit>: WIP')
     if runeBotShort + '!help' == message.content:
         await message.channel.send('List of commands [start with ' + runeBotShort + '!]:'
-                                   '\n- help: Displays help'
-                                   '\n'
-                                   '\nMemes:'
-                                   '\n- egal - Wendler'
-                                   '\n- mock - Mocks the last message'
-                                   '\n- bonk - bonk'
-                                   '\n- intelligent - no signs'
-                                   '\n- impostor - ejects all impostors'
-                                   '\n'
-                                   '\nAutomatic functions:'
-                                   '\n- Repeats \'f\', \'F\' and \':regional_indicator_f:\''
-                                   '\n- Knows the complete script of Highschool DxD Season 1'
-                                   '\n- DIE TECHNIK, THADDÄUS!')
+                                                                                    '\n- help: Displays help'
+                                                                                    '\n'
+                                                                                    '\nMemes:'
+                                                                                    '\n- egal - Wendler'
+                                                                                    '\n- mock - Mocks the last message'
+                                                                                    '\n- bonk - bonk'
+                                                                                    '\n- intelligent - no signs'
+                                                                                    '\n- impostor - ejects all impostors'
+                                                                                    '\n'
+                                                                                    '\nAutomatic functions:'
+                                                                                    '\n- Repeats \'f\', \'F\' and \':regional_indicator_f:\''
+                                                                                    '\n- Knows the complete script of Highschool DxD Season 1'
+                                                                                    '\n- DIE TECHNIK, THADDÄUS!')
 
     ## admin commands
     if runeBotShort + '!adminusers' == message.content:
@@ -150,7 +182,8 @@ async def on_message(message):
             if not isinstance(guild.get_member(userID), discord.Member):
                 await adminChannel.send('User with ID ' + str(userID) + ' not found')
                 return
-            await adminChannel.send('User with ID: ' + str(userID) + ' has been banned for ' + str(args[2]) + ' ' + durDict(args[3]))
+            await adminChannel.send(
+                'User with ID: ' + str(userID) + ' has been banned for ' + str(args[2]) + ' ' + durDict(args[3]))
 
     ## normal commands
     if runeBotShort + '!impostor' == message.content:
@@ -186,17 +219,44 @@ async def on_message(message):
         if newContent != "":
             await message.channel.send(newContent)
 
+    # repo management
+    if message.content.lower().startswith(runeBotShort + '!repo'):
+        args = message.content.split()
+        if len(args) == 1:
+            await message.channel.send('Usage:'
+                                       '\n...!repo set <insert repo link> - sets new repo'
+                                       '\n...!repo issue <insert issue number of current repo> - shows issue with given number of current repo')
+        elif args[1] == 'set':
+            if len(args) > 2:
+                setRepo(args[2])
+                await message.channel.send('Repo set successfully as ' + getRepo())
+        elif args[1] == 'issue':
+            if len(args) > 2:
+                await message.channel.send('Getting Issue #' + args[2] + ' from ' + getRepo() +
+                                           '\n Link: ' + 'https://github.com/' + getRepo() + '/issues/' + args[2])
+                comment = git.get_repo(getRepo()).get_issue(int(args[2]))
+                await message.channel.send('First Comment:\nBy User: '
+                                           + str(comment.user.login)
+                                           + '\nID: '
+                                           + str(comment.id)
+                                           + '\nCreated at: '
+                                           + str(comment.created_at)
+                                           + '\nMessage: '
+                                           + str(comment.body)
+                                           )
+
     # Pavillion management
     if message.content.lower().startswith(runeBotShort + '!pavillion'):
         if message.author == client.user:
             return
         args = message.content.split()
         if len(args) == 1:
-            await message.channel.send('Usage: !pavilion <help|erect|burn> [erect: custom name] [erect/burn: text/voice]')
+            await message.channel.send(
+                'Usage: !pavilion <help|erect|burn> [erect/burn: custom name] [erect: text/voice]')
             return
         if args[1] == 'help':
             await message.channel.send('Usage: !pavilion <help|erect|burn> | Every user is allowed one pavilion for '
-                                       'voice and text respectively.') 
+                                       'voice and text respectively.')
         if args[1] == 'erect':
             await message.channel.send('Not implemented yet')
         if args[1] == 'burn':
