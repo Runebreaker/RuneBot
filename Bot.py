@@ -6,7 +6,7 @@ from difflib import SequenceMatcher
 import discord
 from dotenv import load_dotenv
 
-from github import Github, Repository
+from github import Github
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -41,10 +41,16 @@ def setRepo(text):
 
 
 def getRepo():
+    assertFile("RepoInfo.txt")
     file = open("RepoInfo.txt", "r")
     string = file.read()[9:]
     file.close()
     return string
+
+
+def assertFile(text):
+    if os.path.getsize(text) == 0:
+        setRepo(" ")
 
 
 runeBotLoginMail = 'realrunebot@gmail.de'
