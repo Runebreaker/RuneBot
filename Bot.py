@@ -1,6 +1,7 @@
 # Bot.py
 import os
 import random
+import re
 from difflib import SequenceMatcher
 
 import discord
@@ -237,6 +238,10 @@ async def on_message(message):
                 setRepo(args[2])
                 await message.channel.send('Repo set successfully as ' + getRepo())
         elif args[1] == 'issue':
+            if not len(re.findall("\w+/\w+", getRepo())) == 1:
+                await message.channel.send('Invalid repository format, use \'<user>/<repo name>\'.\nCurrent: '
+                                           + getRepo())
+                return
             if len(args) > 2:
                 await message.channel.send('Getting Issue #' + args[2] + ' from ' + getRepo() +
                                            '\n Link: ' + 'https://github.com/' + getRepo() + '/issues/' + args[2])
