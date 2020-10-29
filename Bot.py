@@ -49,7 +49,7 @@ def getRepo():
 
 
 def assertFile(text):
-    if os.path.getsize(text) == 0:
+    if os.path.isfile(text):
         setRepo(" ")
 
 
