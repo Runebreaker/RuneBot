@@ -1,4 +1,6 @@
 # Bot.py
+import asyncio
+import time
 import os
 import random
 import re
@@ -8,16 +10,30 @@ import discord
 from dotenv import load_dotenv
 
 from github import Github
+from pathlib import Path
+import gspread
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
+
+SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+GH_TAGS_SHEET_ID = "125LetUS9LFb9gMc71yBZqX0heq1RzAQN2fGkad8TbmE"
+CHILLOUT_TAGS_SHEET_ID = "1YlIv84-yh8SyX4AlFKcJY1KMPhDHZUoZVlxSC5Hr3vY"
+TAG_RANGE_DEFAULT = 'Tags!A:D'
+TAG_RANGE_NAMES = 'Tags!B:B'
+
+gc = gspread.oauth(scopes=gspread.auth.DEFAULT_SCOPES)
 
 pavilions = []
 client = discord.Client()
 adminChannelID = 755841743861317632  # default for chillout lounge
 
 runeBotShort = 'rb'
+tag_list_name = "tags.txt"
+if not Path("./" + tag_list_name).exists():
+    with open(tag_list_name, "w"):
+        pass
 numberLines = 0
 text_file = open("HighSchoolDxD.txt", encoding="utf8")
 # filtered_file = open("HighSchoolDxDFiltered.txt", encoding="utf8")
@@ -89,6 +105,46 @@ def durDict(str):
     return options[str]()
 
 
+def checkIfRowsHaveName(rows, name) -> bool:
+    for row in rows:
+        if row[1] == name:
+            return True
+    return False
+
+
+def nameExists(str) -> bool:
+    f = open(tag_list_name, "r")
+    tags = f.readlines()
+    f.close()
+    for line in tags:
+        if str == line.split(';')[0]:
+            return True
+    return False
+
+
+async def rping(message):
+    users = set()
+    for reaction in message.reactions:
+        async for user in reaction.users():
+            users.add(user)
+    new_pings = '{}'.format(message.author.mention)
+    for user in users:
+        if user != client.user:
+            new_pings += ' {}'.format(user.mention)
+    await message.channel.send(new_pings)
+
+
+async def timer(msg, duration, text):
+    second_int = time.time()
+    target_int = duration + second_int
+    while True:
+        if time.time() >= target_int:
+            break
+        await asyncio.sleep(1)
+    await rping(msg)
+    await msg.channel.send(f"Your countdown has ended: " + " ".join(text))
+
+
 @client.event
 async def on_ready():
     guild = discord.utils.get(client.guilds, name=GUILD)
@@ -123,6 +179,10 @@ async def on_message(message):
     if 'technik' in message.content.lower():
         await message.channel.send('DIE TECHNIK, THADDÄUS!')
 
+    # Dieser bot hat den style und das geld
+    if 'style' in message.content.lower():
+        await message.channel.send('und das Geld.')
+
     # Commands
     ## help
     if '!help' == message.content:
@@ -139,6 +199,7 @@ async def on_message(message):
     if runeBotShort + '!help' == message.content:
         await message.channel.send('List of commands [start with ' + runeBotShort + '!]:'
                                                                                     '\n- help: Displays help'
+                                                                                    '\n- Using > or ; has similar functions as in Grand Haven (Kingfisher/Sharkie)'
                                                                                     '\n'
                                                                                     '\nMemes:'
                                                                                     '\n- egal - Wendler'
@@ -192,11 +253,140 @@ async def on_message(message):
             await adminChannel.send(
                 'User with ID: ' + str(userID) + ' has been banned for ' + str(args[2]) + ' ' + durDict(args[3]))
 
+    ## GH Command System
+    if message.content.startswith('>') or message.content.startswith(';'):
+        current_string = message.content[1:].split(' ')
+        if current_string[0] == 't' or current_string[0] == 'tag' or current_string[0] == 'tags':
+            sheet = gc.open("Chillout Tags").sheet1
+            if current_string[1] == 'create':
+                substring = current_string[2].split('\n')
+                if len(substring) > 1:
+                    temp_str = list()
+                    temp_str.append(current_string[0])
+                    temp_str.append(current_string[1])
+                    i = 0
+                    for val in substring:
+                        temp_str.append(substring[i])
+                        i += 1
+                    i = 0
+                    for val in current_string[3:]:
+                        temp_str.append(current_string[3 + i])
+                        temp_str.append('\n')
+                    temp_str.pop()
+                    current_string = temp_str
+                try:
+                    sheet.find(current_string[2], in_column=2)
+                    await message.channel.send("Tag already exists.")
+                except gspread.exceptions.CellNotFound:
+                    sheet.append_row([current_string[2], ''.join(current_string[3:]), message.author.id])
+                    await message.channel.send("Tag created.")
+            elif current_string[1] == 'update':
+                substring = current_string[2].split('\n')
+                if len(substring) > 1:
+                    temp_str = list()
+                    temp_str.append(current_string[0])
+                    temp_str.append(current_string[1])
+                    i = 0
+                    for val in substring:
+                        temp_str.append(substring[i])
+                        i += 1
+                    i = 0
+                    for val in current_string[3:]:
+                        temp_str.append(current_string[3 + i])
+                    current_string = temp_str
+                try:
+                    found_cell = sheet.find(current_string[2], in_column=2)
+                    if int(message.author.id) != int(
+                            sheet.cell(found_cell.row, 4, value_render_option='FORMULA').value) and not [x for x in
+                                                                                                         message.author.roles
+                                                                                                         if
+                                                                                                         x.name == 'Admin']:
+                        raise gspread.exceptions.CellNotFound
+                    sheet.cell(found_cell.row, 3, value_render_option='FORMULA').value = ''.join(current_string[3:])
+                    await message.channel.send("Tag updated.")
+                except gspread.exceptions.CellNotFound:
+                    await message.channel.send("Either you are not the owner of the tag, "
+                                               "not an admin or the tag doesn't exist.")
+            elif current_string[1] == 'delete':
+                try:
+                    if sheet.row_count <= 1:
+                        sheet.append_row(['', '', ''])
+                    found_cell = sheet.find(current_string[2], in_column=2)
+                    if int(message.author.id) != int(
+                            sheet.cell(found_cell.row, 4, value_render_option='FORMULA').value) and not [x for x in
+                                                                                                         message.author.roles
+                                                                                                         if
+                                                                                                         x.name == 'Admin']:
+                        raise gspread.exceptions.CellNotFound
+                    sheet.delete_row(found_cell.row)
+                    await message.channel.send("Tag deleted.")
+                except gspread.exceptions.CellNotFound:
+                    await message.channel.send("Either you are not the owner of the tag, "
+                                               "not an admin or the tag doesn't exist.")
+            elif current_string[1] == 'help':
+                await message.channel.send("Possible parameters: help, create, update, delete, tag name")
+            else:
+                try:
+                    found_cell = sheet.find(current_string[1], in_column=2)
+                    await message.channel.send(sheet.cell(found_cell.row, 3, value_render_option='FORMULA').value)
+                except gspread.exceptions.CellNotFound:
+                    await message.channel.send("Tag doesn't exist.")
+        if current_string[0] == 'ght' or current_string[0] == 'ghtag' or current_string[0] == 'ghtags':
+            sheet = gc.open("GH Tags backup").sheet1
+            try:
+                found_cell = sheet.find(current_string[1], in_column=2)
+                await message.channel.send(sheet.cell(found_cell.row, 3, value_render_option='FORMULA').value)
+            except gspread.exceptions.CellNotFound:
+                await message.channel.send("Tag doesn't exist.")
+        if current_string[0] == 'rping':
+            link = current_string[1].split('/')
+            server_id = int(link[4])
+            channel_id = int(link[5])
+            msg_id = int(link[6])
+
+            server = client.get_guild(server_id)
+            channel = server.get_channel(channel_id)
+            msg = await channel.fetch_message(msg_id)
+
+            if msg.author == message.author or [x for x in message.author.roles if x.name == 'Admin']:
+                await rping(msg)
+        if current_string[0] == 'rem':
+            if current_string[1] == 'help':
+                await message.channel.send("Usage: >rem <time amount> <message>\nThe amount")
+            else:
+                time_amount = re.findall(r'\d+[smhd]', current_string[1])
+                actual_hours = 0
+                actual_minutes = 0
+                actual_seconds = 0
+                for point in time_amount:
+                    if point[len(point) - 1] == 's':
+                        actual_seconds += int(point[0:len(point) - 1])
+                    if point[len(point) - 1] == 'm':
+                        actual_minutes += int(point[0:len(point) - 1])
+                    if point[len(point) - 1] == 'h':
+                        actual_hours += int(point[0:len(point) - 1])
+                total_seconds = int(actual_seconds) + int(actual_minutes) * 60 + int(actual_hours) * 60 * 60
+                if not total_seconds <= 0:
+                    await message.channel.send(
+                        "Set timer for " + str(actual_hours) + 'h' + str(actual_minutes) + 'm' + str(
+                            actual_seconds) + 's' + ".")
+                    await message.add_reaction("⏰")
+                    if len(current_string) >= 3:
+                        await timer(message,
+                                    int(actual_seconds) + int(actual_minutes) * 60 + int(actual_hours) * 60 * 60,
+                                    current_string[2:])
+                    else:
+                        await timer(message,
+                                    int(actual_seconds) + int(actual_minutes) * 60 + int(actual_hours) * 60 * 60,
+                                    "No message given.")
+                else:
+                    await message.channel.send("Invalid time.")
+
     ## normal commands
     if runeBotShort + '!impostor' == message.content:
         for member in guild.members:
             for role in member.roles:
-                if str(role) == 'Impostor':
+                if str(role).find('Impostor') != -1:
                     await message.channel.send(member.name + ' was An Impostor!')
     if runeBotShort + '!intelligent' == message.content:
         await message.channel.send('https://tenor.com/view/buzz-lightyear-no-sign-of-intelligent-life-dumb-toy-story'
