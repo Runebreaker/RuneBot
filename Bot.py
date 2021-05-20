@@ -141,7 +141,6 @@ async def timer(msg, duration, text):
         if time.time() >= target_int:
             break
         await asyncio.sleep(1)
-    await rping(msg)
     await msg.channel.send(f"Your countdown has ended: " + " ".join(text))
 
 
