@@ -1,10 +1,13 @@
 # Bot.py
+import urllib.request
+from PIL import Image, ImageChops, ImageDraw
 import asyncio
 import time
 import os
 import random
-import re
+import regex as re
 from difflib import SequenceMatcher
+import emoji
 
 import discord
 from dotenv import load_dotenv
@@ -16,6 +19,8 @@ import gspread
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
+
+EMOJI_API_KEY = "01823a3dce1cb9a09697726cc4e3c5da4da4f443"
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 GH_TAGS_SHEET_ID = "125LetUS9LFb9gMc71yBZqX0heq1RzAQN2fGkad8TbmE"
@@ -141,7 +146,35 @@ async def timer(msg, duration, text):
         if time.time() >= target_int:
             break
         await asyncio.sleep(1)
+    await rping(msg)
     await msg.channel.send(f"Your countdown has ended: " + " ".join(text))
+
+
+async def lastMessage(ctx, users_id: int):
+    newestMessage = None
+    fetchMessage = await ctx.history().find(lambda m: m.author.id == users_id)
+    if fetchMessage is None:
+        return
+
+    if newestMessage is None:
+        newestMessage = fetchMessage
+    else:
+        if fetchMessage.created_at < newestMessage.created_at:
+            newestMessage = fetchMessage
+
+    if (newestMessage is not None):
+        return newestMessage
+    else:
+        await ctx.send("No message found.")
+
+
+def crop_to_circle(im):
+    bigsize = (im.size[0] * 3, im.size[1] * 3)
+    mask = Image.new('L', bigsize, 0)
+    ImageDraw.Draw(mask).ellipse((0, 0) + bigsize, fill=255)
+    mask = mask.resize(im.size, Image.ANTIALIAS)
+    mask = ImageChops.darker(mask, im.split()[-1])
+    im.putalpha(mask)
 
 
 @client.event
@@ -163,24 +196,24 @@ async def on_message(message):
         return
 
     # repo crawler
+    if not (message.content.startswith(">") or message.content.startswith(";") or message.content.startswith(runeBotShort + "!")):
+        # DxD
+        global lines
+        secondList = []
+        for i in range(len(lines)):
+            if similar(message.content.lower(), lines[i].lower()) > 0.75 and len(lines[i]) > 3:
+                if i + 1 <= len(lines):
+                    secondList.append(lines[i + 1])
+        if len(secondList) > 0:
+            await message.channel.send(secondList[random.randint(0, len(secondList) - 1)])
 
-    # DxD
-    global lines
-    secondList = []
-    for i in range(len(lines)):
-        if similar(message.content.lower(), lines[i].lower()) > 0.75 and len(lines[i]) > 3:
-            if i + 1 <= len(lines):
-                secondList.append(lines[i + 1])
-    if len(secondList) > 0:
-        await message.channel.send(secondList[random.randint(0, len(secondList) - 1)])
+        # DIE TECHNIK THADDÄUS
+        if 'technik' in message.content.lower():
+            await message.channel.send('DIE TECHNIK, THADDÄUS!')
 
-    # DIE TECHNIK THADDÄUS
-    if 'technik' in message.content.lower():
-        await message.channel.send('DIE TECHNIK, THADDÄUS!')
-
-    # Dieser bot hat den style und das geld
-    if 'style' in message.content.lower():
-        await message.channel.send('und das Geld.')
+        # Dieser bot hat den style und das geld
+        if 'style' in message.content.lower():
+            await message.channel.send('und das Geld.')
 
     # Commands
     ## help
@@ -380,6 +413,82 @@ async def on_message(message):
                                     "No message given.")
                 else:
                     await message.channel.send("Invalid time.")
+        # TODO: Add ability to use custom text instead of 'I don't speak bottom.'
+        if current_string[0] == 'what':
+            # Syntax: !what <Emoji Number> => REPLY FEATURE
+            channel = message.channel
+            if len(current_string) < 2:
+                emoji_number = 0
+            else:
+                emoji_number = int(current_string[1])
+            if message.reference is not None:
+                lm = await channel.fetch_message(message.reference.message_id)
+            else:
+                lm_list = await channel.history(limit=2).flatten()
+                lm = lm_list[1]
+            await message.delete()
+            await lm.author.avatar_url.save("user_avatar.png")
+
+            current_emoji_dict = {}
+            custom_emojis = []
+            data = re.findall(r'(<:\w*:\d*>|\X)', lm.content)
+            for word in data:
+                if any(char in emoji.UNICODE_EMOJI['en'] for char in word):
+                    custom_emojis.append("-".join(["{:x}".format(ord(char)) for char in word]))
+                elif re.fullmatch(r'<:\w*:\d*>', word) is not None:
+                    custom_emojis.append(word)
+            for e in custom_emojis:
+                try:
+                    current_emoji_dict[e.split(':')[1]] = int(e.split(':')[2].replace('>', ''))
+                except:
+                    current_emoji_dict[e.split(':')[0]] = 0
+            keys = list(current_emoji_dict.keys())
+            for i in range(len(keys)):
+                if i != emoji_number:
+                    continue
+                else:
+                    file_raw = keys[i]
+                    if current_emoji_dict[file_raw] == 0:
+                        while file_raw.find('-'):
+                            if os.path.isfile("./72x72/" + file_raw + ".png"):
+                                break
+                            else:
+                                file_raw = '-'.join(file_raw.split('-')[:-1])
+                        if not os.path.isfile("./72x72/" + file_raw + ".png"):
+                            return
+                        image = Image.open("./72x72/" + file_raw + ".png")
+                        image.save("user_emoji.png", "PNG")
+                    else:
+                        try:
+                            await (await guild.fetch_emoji(current_emoji_dict[keys[i]])).url.save("user_emoji.png")
+                        except:
+                            await channel.send("The emoji you targeted is from another server. Loser.")
+                            return
+
+            if not os.path.isfile("user_avatar.png"):
+                return
+
+            bg = Image.open("IDSB.jpg")
+            av = Image.open("user_avatar.png").convert("RGBA")  # POS: 257, 289 - 250x250
+            av.thumbnail((250, 250), Image.ANTIALIAS)
+            crop_to_circle(av)
+            av.save("user_avatar.png", "PNG")
+            em = Image.open("user_emoji.png").convert("RGBA")  # POS1: 512, 275 - 100x100; POS2: 243, 919 - 33x33
+            em.thumbnail((120, 120), Image.ANTIALIAS)
+            em.save("user_emoji.png", "PNG")
+
+            bg.paste(av, (257 - int(av.width / 2), 289 - int(av.height / 2)), av)
+            bg.paste(em, (512 - int(em.width / 2), 275 - int(em.height / 2)), em)
+            em.thumbnail((33, 33), Image.ANTIALIAS)
+            em.save("user_emoji.png", "PNG")
+            bg.paste(em, (243 - int(em.width / 2), 919 - int(em.height / 2)), em)
+
+            bg.save("ready.png", "PNG")
+
+            await message.channel.send(file=discord.File("ready.png"))
+            os.remove("ready.png")
+            os.remove("user_avatar.png")
+            os.remove("user_emoji.png")
 
     ## normal commands
     if runeBotShort + '!impostor' == message.content:
