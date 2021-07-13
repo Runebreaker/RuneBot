@@ -1,5 +1,4 @@
 # Bot.py
-import urllib.request
 from PIL import Image, ImageChops, ImageDraw
 import asyncio
 import time
@@ -148,24 +147,6 @@ async def timer(msg, duration, text):
         await asyncio.sleep(1)
     await rping(msg)
     await msg.channel.send(f"Your countdown has ended: " + " ".join(text))
-
-
-async def lastMessage(ctx, users_id: int):
-    newestMessage = None
-    fetchMessage = await ctx.history().find(lambda m: m.author.id == users_id)
-    if fetchMessage is None:
-        return
-
-    if newestMessage is None:
-        newestMessage = fetchMessage
-    else:
-        if fetchMessage.created_at < newestMessage.created_at:
-            newestMessage = fetchMessage
-
-    if (newestMessage is not None):
-        return newestMessage
-    else:
-        await ctx.send("No message found.")
 
 
 def crop_to_circle(im):
